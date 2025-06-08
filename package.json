@@ -1,5 +1,5 @@
 {
-  "name": "codesentry-mcp",
+  "name": "mcp-codesentry",
   "version": "1.0.0",
   "description": "CodeSentry MCP - AI-powered code review assistant with 5 specialized review tools for security, best practices, and comprehensive code analysis",
   "main": "dist/index.js",
