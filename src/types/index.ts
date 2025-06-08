@@ -7,16 +7,15 @@ export interface ReviewPlanParams {
   taskId: string;
   taskDescription: string;
   implementationPlan: string;
-  codebaseRoot?: string;
-  includePatterns?: string[];
-  excludePatterns?: string[];
+  codebaseContext: string;
 }
 
 export interface ReviewImplementationParams {
   taskId: string;
-  completionSummary: string;
-  changedFiles?: string[];
-  codebaseRoot?: string;
+  taskDescription: string;
+  originalPlan: string;
+  implementationSummary: string;
+  codebaseSnapshot: string;
 }
 
 // Review response types
@@ -36,11 +35,20 @@ export interface ReviewMetadata {
 }
 
 export interface ReviewResponse {
-  taskId: string;
+  approved: boolean;
   reviewType: 'plan' | 'implementation';
-  overallScore: number;
-  feedback: ReviewFeedback;
-  metadata: ReviewMetadata;
+  feedback: {
+    summary: string;
+    issues: string[];
+    suggestions: string[];
+    strengths: string[];
+  };
+  metadata: {
+    taskId: string;
+    reviewedAt: string;
+    modelUsed: string;
+    confidence: number;
+  };
 }
 
 // Storage types
@@ -54,13 +62,41 @@ export interface StoredTask {
 }
 
 // Configuration types
+export interface GeminiConfig {
+  apiKey: string;
+  proModel: string;
+  flashModel: string;
+}
+
 export interface ServerConfig {
-  geminiApiKey: string;
-  geminiModel: string;
-  storageBasePath: string;
-  maxCodebaseSizeMB: number;
-  repomixTimeoutMs: number;
-  geminiRequestTimeoutMs: number;
-  enableAuditLog: boolean;
-  encryptTempFiles: boolean;
+  name: string;
+  version: string;
+  gemini: GeminiConfig;
+}
+
+export interface StorageConfig {
+  basePath: string;
+  encrypt?: boolean;
+  maxSizeMB?: number;
+}
+
+// Task context for storage
+export interface TaskContext {
+  taskId: string;
+  taskDescription: string;
+  plan?: string;
+  implementation?: string;
+  preSnapshot?: string;
+  postSnapshot?: string;
+  reviews: ReviewResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Repomix configuration
+export interface RepomixConfig {
+  style?: 'plain' | 'markdown' | 'html';
+  excludePatterns?: string[];
+  includePatterns?: string[];
+  maxFileSize?: number;
 } 

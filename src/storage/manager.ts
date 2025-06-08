@@ -1,185 +1,142 @@
 /**
- * Storage Manager
- * Handles temporary file storage and cleanup
+ * Storage Manager for handling code snapshots and task contexts
  */
 
 import fs from 'fs-extra';
-import path from 'path';
-import crypto from 'crypto';
-import os from 'os';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import * as os from 'os';
 import { logger } from '../utils/logger.js';
-import type { ServerConfig } from '../types/index.js';
-
-export interface TaskContext {
-  taskId: string;
-  plan: string;
-  preSnapshot: string | null;
-  postSnapshot: string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-}
-
-export interface StorageStats {
-  totalFiles: number;
-  totalSizeBytes: number;
-  totalSizeMB: number;
-}
+import type { StorageConfig, TaskContext } from '../types/index.js';
 
 export class StorageManager {
   private basePath: string;
-  private config: Partial<ServerConfig>;
-  private encryptionKey: Buffer;
-  
-  constructor(config: Partial<ServerConfig> = {}) {
+  private config: StorageConfig;
+  private encryptionKey?: Buffer;
+
+  constructor(config: StorageConfig) {
     this.config = config;
-    this.basePath = config.storageBasePath || path.join(os.homedir(), '.tmp', 'software-architect-mcp');
-    // Use a consistent encryption key (in production, this should be from secure config)
-    this.encryptionKey = crypto.scryptSync('default-encryption-key', 'salt', 32);
-    logger.info(`Storage manager initialized with base path: ${config}`);
+    this.basePath = config.basePath;
+    
+    if (config.encrypt) {
+      // Generate a consistent encryption key based on system info
+      const systemId = `${os.hostname()}-${os.userInfo().username}`;
+      this.encryptionKey = crypto.scryptSync(systemId, 'software-architect-mcp', 32);
+    }
   }
 
   async initialize(): Promise<void> {
     await fs.ensureDir(this.basePath);
+    await fs.ensureDir(path.join(this.basePath, 'snapshots'));
+    await fs.ensureDir(path.join(this.basePath, 'tasks'));
+    logger.info(`Storage initialized at: ${this.basePath}`);
   }
 
-  async storeCodebaseSnapshot(
-    taskId: string,
-    content: string,
-    snapshotType: 'pre' | 'post'
-  ): Promise<string> {
+  async storeSnapshot(taskId: string, content: string, type: 'pre' | 'post'): Promise<string> {
+    const snapshotId = `${taskId}-${type}-${Date.now()}`;
+    const filePath = path.join(this.basePath, 'snapshots', `${snapshotId}.txt`);
+    
     // Check size limit
-    const contentSizeBytes = Buffer.byteLength(content, 'utf-8');
-    const maxSizeBytes = (this.config.maxCodebaseSizeMB || 100) * 1024 * 1024;
+    const sizeInBytes = Buffer.byteLength(content, 'utf8');
+    const maxSizeBytes = (this.config.maxSizeMB || 100) * 1024 * 1024;
     
-    if (contentSizeBytes > maxSizeBytes) {
-      throw new Error(`Content size exceeds maximum size of ${this.config.maxCodebaseSizeMB}MB`);
+    if (sizeInBytes > maxSizeBytes) {
+      throw new Error(`Content size exceeds maximum size of ${this.config.maxSizeMB}MB`);
     }
-
-    const filePath = this.getSnapshotPath(taskId, snapshotType);
     
-    // Encrypt if enabled
     let dataToStore = content;
-    if (this.config.encryptTempFiles) {
+    
+    if (this.config.encrypt && this.encryptionKey) {
       dataToStore = this.encrypt(content);
     }
-
-    await fs.writeFile(filePath, dataToStore, 'utf-8');
-    return filePath;
+    
+    await fs.writeFile(filePath, dataToStore);
+    logger.info(`Stored ${type} snapshot for task ${taskId}: ${snapshotId}`);
+    
+    return snapshotId;
   }
 
-  async getCodebaseSnapshot(
-    taskId: string,
-    snapshotType: 'pre' | 'post'
-  ): Promise<string | null> {
-    const filePath = this.getSnapshotPath(taskId, snapshotType);
+  async retrieveSnapshot(snapshotId: string): Promise<string> {
+    const filePath = path.join(this.basePath, 'snapshots', `${snapshotId}.txt`);
     
-    if (!(await fs.pathExists(filePath))) {
-      return null;
+    if (!await fs.pathExists(filePath)) {
+      throw new Error(`Snapshot not found: ${snapshotId}`);
     }
-
-    const content = await fs.readFile(filePath, 'utf-8');
     
-    // Decrypt if enabled
-    if (this.config.encryptTempFiles) {
-      return this.decrypt(content);
+    let content = await fs.readFile(filePath, 'utf8');
+    
+    // Handle case where content might be a Buffer
+    if (Buffer.isBuffer(content)) {
+      content = content.toString('utf8');
+    }
+    
+    if (this.config.encrypt && this.encryptionKey) {
+      content = this.decrypt(content);
     }
     
     return content;
   }
 
-  async storeTaskContext(context: TaskContext): Promise<void> {
-    const filePath = this.getContextPath(context.taskId);
-    const data = JSON.stringify(context, null, 2);
-    await fs.writeFile(filePath, data, 'utf-8');
+  async storeTaskContext(taskId: string, context: TaskContext): Promise<void> {
+    const filePath = path.join(this.basePath, 'tasks', `${taskId}.json`);
+    
+    let dataToStore = JSON.stringify(context, null, 2);
+    
+    if (this.config.encrypt && this.encryptionKey) {
+      dataToStore = this.encrypt(dataToStore);
+    }
+    
+    await fs.writeFile(filePath, dataToStore);
+    logger.info(`Stored task context for: ${taskId}`);
   }
 
-  async getTaskContext(taskId: string): Promise<TaskContext | null> {
-    const filePath = this.getContextPath(taskId);
+  async retrieveTaskContext(taskId: string): Promise<TaskContext | null> {
+    const filePath = path.join(this.basePath, 'tasks', `${taskId}.json`);
     
-    if (!(await fs.pathExists(filePath))) {
+    if (!await fs.pathExists(filePath)) {
       return null;
     }
-
-    const content = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(content);
-  }
-
-  async cleanupOldSnapshots(maxAgeHours: number = 24): Promise<void> {
-    try {
-      const files = await fs.readdir(this.basePath);
-      const now = Date.now();
-      const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
-
-      for (const file of files) {
-        const filePath = path.join(this.basePath, file);
-        const stats = await fs.stat(filePath);
-        const age = now - stats.mtime.getTime();
-
-        if (age > maxAgeMs) {
-          await fs.unlink(filePath);
-          logger.info(`Removed old snapshot: ${file}`);
-        }
-      }
-    } catch (error) {
-      logger.error('Error during cleanup:', error);
+    
+    let content = await fs.readFile(filePath, 'utf8');
+    
+    // Handle case where content might be a Buffer
+    if (Buffer.isBuffer(content)) {
+      content = content.toString('utf8');
     }
-  }
-
-  async cleanupTaskFiles(taskId: string): Promise<void> {
-    const files = await fs.readdir(this.basePath);
-    const taskFiles = files.filter(file => file.includes(taskId));
-
-    for (const file of taskFiles) {
-      const filePath = path.join(this.basePath, file);
-      await fs.unlink(filePath);
+    
+    if (this.config.encrypt && this.encryptionKey) {
+      content = this.decrypt(content);
     }
-  }
-
-  async getStorageStats(): Promise<StorageStats> {
-    const files = await fs.readdir(this.basePath);
-    let totalSizeBytes = 0;
-
-    for (const file of files) {
-      const filePath = path.join(this.basePath, file);
-      const stats = await fs.stat(filePath);
-      totalSizeBytes += stats.size;
-    }
-
-    return {
-      totalFiles: files.length,
-      totalSizeBytes,
-      totalSizeMB: totalSizeBytes / (1024 * 1024)
-    };
-  }
-
-  private getSnapshotPath(taskId: string, snapshotType: 'pre' | 'post'): string {
-    const safeTaskId = this.sanitizeTaskId(taskId);
-    return path.join(this.basePath, `${safeTaskId}-${snapshotType}-snapshot.txt`);
-  }
-
-  private getContextPath(taskId: string): string {
-    const safeTaskId = this.sanitizeTaskId(taskId);
-    return path.join(this.basePath, `${safeTaskId}-context.json`);
-  }
-
-  private sanitizeTaskId(taskId: string): string {
-    // Remove any path traversal attempts and unsafe characters
-    return taskId.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/\.+/g, '');
+    
+    return JSON.parse(content) as TaskContext;
   }
 
   private encrypt(text: string): string {
+    if (!this.encryptionKey) {
+      throw new Error('Encryption key not available');
+    }
+    
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', this.encryptionKey, iv);
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     
-    // Prepend IV to the encrypted data
     return iv.toString('hex') + ':' + encrypted;
   }
 
   private decrypt(encryptedText: string): string {
-    const [ivHex, encrypted] = encryptedText.split(':');
+    if (!this.encryptionKey) {
+      throw new Error('Encryption key not available');
+    }
+    
+    // Handle case where encryptedText might be a Buffer
+    let textToDecrypt = encryptedText;
+    if (Buffer.isBuffer(encryptedText)) {
+      textToDecrypt = encryptedText.toString('utf8');
+    }
+    
+    const [ivHex, encrypted] = textToDecrypt.split(':');
     const iv = Buffer.from(ivHex, 'hex');
     
     const decipher = crypto.createDecipheriv('aes-256-cbc', this.encryptionKey, iv);
@@ -188,5 +145,48 @@ export class StorageManager {
     decrypted += decipher.final('utf8');
     
     return decrypted;
+  }
+
+  async cleanup(olderThanDays: number = 7): Promise<void> {
+    const snapshots = await fs.readdir(path.join(this.basePath, 'snapshots'));
+    const cutoffTime = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
+    
+    for (const file of snapshots) {
+      const filePath = path.join(this.basePath, 'snapshots', file);
+      const stats = await fs.stat(filePath);
+      
+      if (stats.mtimeMs < cutoffTime) {
+        await fs.remove(filePath);
+        logger.info(`Cleaned up old snapshot: ${file}`);
+      }
+    }
+  }
+
+  async getStorageStats(): Promise<{
+    totalSnapshots: number;
+    totalTasks: number;
+    totalSizeMB: number;
+  }> {
+    const snapshots = await fs.readdir(path.join(this.basePath, 'snapshots'));
+    const tasks = await fs.readdir(path.join(this.basePath, 'tasks'));
+    
+    let totalSize = 0;
+    
+    for (const file of [...snapshots, ...tasks]) {
+      const filePath = path.join(this.basePath, file.includes('.json') ? 'tasks' : 'snapshots', file);
+      const stats = await fs.stat(filePath);
+      totalSize += stats.size;
+    }
+    
+    return {
+      totalSnapshots: snapshots.length,
+      totalTasks: tasks.length,
+      totalSizeMB: totalSize / (1024 * 1024)
+    };
+  }
+
+  sanitizePath(inputPath: string): string {
+    // Remove any directory traversal attempts
+    return path.basename(inputPath).replace(/[^a-zA-Z0-9._-]/g, '');
   }
 } 

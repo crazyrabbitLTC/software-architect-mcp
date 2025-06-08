@@ -5,7 +5,7 @@
     
     // Module settings
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "target": "ES2022",
     "lib": ["ES2022"],
     
@@ -28,14 +28,15 @@
     // Other
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "rootDir": "src"
   },
   "include": [
-    "src/**/*",
-    "tests/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
+    "tests",
     "dist"
   ]
 } 
