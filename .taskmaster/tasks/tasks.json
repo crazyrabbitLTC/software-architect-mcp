@@ -1,0 +1,251 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Setup MCP Server Project Structure",
+      "description": "Initialize the TypeScript project for the Model Context Protocol server with necessary dependencies and configuration files.",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "details": "1. Create a new TypeScript project\n2. Install dependencies:\n   - @modelcontextprotocol/sdk for MCP server functionality\n   - @google/generative-ai for Gemini API integration\n   - TypeScript and development tools (vitest, eslint, tsx)\n   - Supporting libraries (winston for logging, fs-extra, execa for repomix, etc.)\n3. Configure tsconfig.json for modern TypeScript features:\n   - ES2022 target with ESNext modules\n   - Strict type checking (adjusted for initial development)\n   - Source maps and declarations for debugging\n4. Setup project directory structure:\n   ```\n   /src\n     /core        # MCP server core functionality\n     /repomix     # Repomix integration\n     /storage     # Storage management\n     /gemini      # Gemini API client\n     /review      # Review engine\n     /types       # TypeScript interfaces\n     /utils       # Utility functions\n   /config        # Configuration templates\n   /tests         # Test files\n   /dist          # Build output\n   ```\n5. Create initial package.json with scripts for build, test, and run\n6. Setup .gitignore, README.md, LICENSE (MIT), and environment configuration files\n7. Implement foundational components:\n   - Main entry point (src/index.ts) with basic MCP server setup\n   - Winston logger configuration with console and file outputs\n   - Complete TypeScript type definitions for all major interfaces\n   - Basic test suite to verify setup",
+      "testStrategy": "Verify project structure is correctly set up with all necessary files. Ensure all dependencies can be installed and the project can be built without errors. Run basic tests to confirm the environment is properly configured, including:\n1. Dependency installation verification\n2. TypeScript compilation success\n3. Execution of initial test suite\n4. Verification of build output in dist/ directory",
+      "subtasks": [
+        {
+          "id": 1.1,
+          "title": "Create package.json with dependencies",
+          "status": "completed",
+          "description": "Created package.json with all necessary dependencies including @modelcontextprotocol/sdk, @google/generative-ai, TypeScript tools, and supporting libraries."
+        },
+        {
+          "id": 1.2,
+          "title": "Configure TypeScript",
+          "status": "completed",
+          "description": "Configured TypeScript with ES2022 target, ESNext modules, strict type checking, source maps and declarations for debugging."
+        },
+        {
+          "id": 1.3,
+          "title": "Create project directory structure",
+          "status": "completed",
+          "description": "Created complete project directory structure with placeholder files in core modules."
+        },
+        {
+          "id": 1.4,
+          "title": "Implement foundational components",
+          "status": "completed",
+          "description": "Implemented main entry point, Winston logger, TypeScript type definitions, and basic test suite."
+        },
+        {
+          "id": 1.5,
+          "title": "Create configuration files",
+          "status": "completed",
+          "description": "Created tsconfig.json, vitest.config.ts, eslint.config.js, .gitignore, env.example, and LICENSE (MIT)."
+        },
+        {
+          "id": 1.6,
+          "title": "Build and test project",
+          "status": "completed",
+          "description": "Successfully installed dependencies, compiled TypeScript, ran initial tests, and verified build output."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Implement Core MCP Server",
+      "description": "Create the core MCP server implementation that handles protocol communication and exposes the required tools.",
+      "details": "1. Implement MCP server class using the TypeScript SDK\n2. Register the two main tools:\n   ```typescript\n   // Define tool schemas\n   const reviewPlanSchema = {\n     // Define schema based on ReviewPlanParams interface\n   };\n   \n   const reviewImplementationSchema = {\n     // Define schema based on ReviewImplementationParams interface\n   };\n   \n   // Register tools\n   server.registerTool({\n     name: 'review_plan',\n     description: 'Reviews implementation plan before coding',\n     schema: reviewPlanSchema,\n     handler: reviewPlanHandler\n   });\n   \n   server.registerTool({\n     name: 'review_implementation',\n     description: 'Reviews completed implementation',\n     schema: reviewImplementationSchema,\n     handler: reviewImplementationHandler\n   });\n   ```\n3. Implement server startup and shutdown procedures\n4. Add error handling and logging\n5. Create configuration loading mechanism",
+      "testStrategy": "Write unit tests for the MCP server initialization, tool registration, and basic request handling. Mock the tool handlers to verify correct parameter passing. Test error handling by simulating various error conditions.",
+      "priority": "high",
+      "dependencies": [
+        1
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 3,
+      "title": "Develop Storage Manager",
+      "description": "Create a storage manager component to handle temporary file storage for codebase snapshots in the user's .tmp directory.",
+      "details": "1. Implement StorageManager class with methods:\n   ```typescript\n   class StorageManager {\n     constructor(config: StorageConfig) {\n       // Initialize with cleanup policies, encryption settings\n     }\n     \n     async storeCodebaseSnapshot(taskId: string, content: string): Promise<string> {\n       // Store codebase snapshot in .tmp directory\n       // Return path to stored file\n     }\n     \n     async getCodebaseSnapshot(taskId: string): Promise<string | null> {\n       // Retrieve codebase snapshot\n     }\n     \n     async cleanupOldSnapshots(): Promise<void> {\n       // Remove snapshots based on retention policy\n     }\n     \n     async encryptAtRest(content: string): Promise<string> {\n       // Implement file encryption\n     }\n     \n     async decryptContent(encryptedContent: string): Promise<string> {\n       // Decrypt content\n     }\n   }\n   ```\n2. Implement file system operations using Node.js fs/promises\n3. Add configurable cleanup policies\n4. Implement basic encryption for files at rest\n5. Add error handling for file system operations",
+      "testStrategy": "Test file creation, retrieval, and deletion operations. Verify encryption and decryption functionality. Test cleanup policies by creating files with different timestamps and verifying correct files are removed. Test error handling for file system failures.",
+      "priority": "medium",
+      "dependencies": [
+        1
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 4,
+      "title": "Implement Repomix Integration",
+      "description": "Develop the Repomix manager component to execute repomix for codebase flattening and analysis.",
+      "details": "1. Create RepomixManager class:\n   ```typescript\n   class RepomixManager {\n     constructor(config: RepomixConfig) {\n       // Initialize with configuration\n     }\n     \n     async flattenCodebase(options: {\n       codebaseRoot: string,\n       includePatterns?: string[],\n       excludePatterns?: string[]\n     }): Promise<string> {\n       // Execute repomix via child_process\n       // Format output for optimal LLM consumption\n       // Return flattened codebase content\n     }\n     \n     async generateDiff(beforeSnapshot: string, afterSnapshot: string): Promise<string> {\n       // Generate diff between two snapshots\n     }\n   }\n   ```\n2. Implement execution of repomix using Node.js child_process:\n   ```typescript\n   const { exec } = require('child_process');\n   \n   // Execute repomix command\n   const command = `npx repomix ${options.codebaseRoot} ${includeFlags} ${excludeFlags}`;\n   const result = await new Promise((resolve, reject) => {\n     exec(command, { maxBuffer: 1024 * 1024 * 100 }, (error, stdout, stderr) => {\n       if (error) reject(error);\n       else resolve(stdout);\n     });\n   });\n   ```\n3. Add optimization for large codebases\n4. Implement caching mechanism to avoid redundant processing\n5. Add error handling for repomix execution failures",
+      "testStrategy": "Test repomix execution with various include/exclude patterns. Verify correct handling of large codebases. Test caching mechanism by measuring execution time for repeated calls. Test error handling by simulating repomix failures.",
+      "priority": "high",
+      "dependencies": [
+        1,
+        3
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 5,
+      "title": "Develop Gemini API Client",
+      "description": "Create a client for interacting with Google Gemini API, supporting both Gemini 1.5 Pro and Flash models.",
+      "details": "1. Implement GeminiClient class:\n   ```typescript\n   class GeminiClient {\n     constructor(config: GeminiConfig) {\n       // Initialize with API key, model selection, etc.\n     }\n     \n     async reviewPlan(context: {\n       taskDescription: string,\n       implementationPlan: string,\n       codebaseContext: string\n     }): Promise<ReviewResponse> {\n       // Send request to Gemini API for plan review\n       // Process and structure the response\n     }\n     \n     async reviewImplementation(context: {\n       taskDescription: string,\n       implementationPlan: string,\n       completionSummary: string,\n       beforeCodebase: string,\n       afterCodebase: string\n     }): Promise<ReviewResponse> {\n       // Send request to Gemini API for implementation review\n       // Process and structure the response\n     }\n     \n     private async callGeminiAPI(prompt: string, model: string): Promise<any> {\n       // Make actual API call to Gemini\n     }\n   }\n   ```\n2. Implement structured prompt engineering for consistent reviews\n3. Add support for both Gemini 1.5 Pro and Flash models\n4. Implement error handling and retry logic\n5. Add rate limiting to respect API quotas",
+      "testStrategy": "Test API client with mock responses to verify correct request formatting and response parsing. Test error handling by simulating API failures. Verify rate limiting functionality by sending multiple requests in quick succession.",
+      "priority": "high",
+      "dependencies": [
+        1
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 6,
+      "title": "Create Review Engine",
+      "description": "Develop the review engine that orchestrates the review process, combining codebase context with task information and processing Gemini responses.",
+      "details": "1. Implement ReviewEngine class:\n   ```typescript\n   class ReviewEngine {\n     constructor(\n       private repomixManager: RepomixManager,\n       private storageManager: StorageManager,\n       private geminiClient: GeminiClient\n     ) {}\n     \n     async reviewPlan(params: ReviewPlanParams): Promise<ReviewResponse> {\n       // Orchestrate plan review process\n       // 1. Flatten codebase using repomixManager\n       // 2. Store snapshot using storageManager\n       // 3. Send to Gemini using geminiClient\n       // 4. Process and return response\n     }\n     \n     async reviewImplementation(params: ReviewImplementationParams): Promise<ReviewResponse> {\n       // Orchestrate implementation review process\n       // 1. Get previous snapshot\n       // 2. Create new snapshot\n       // 3. Generate diff\n       // 4. Send to Gemini\n       // 5. Process and return response\n     }\n     \n     private formatReviewResponse(geminiResponse: any): ReviewResponse {\n       // Format raw Gemini response into structured ReviewResponse\n     }\n   }\n   ```\n2. Implement context preparation logic\n3. Add response processing and formatting\n4. Implement task tracking between pre and post reviews\n5. Add performance optimization for large codebases",
+      "testStrategy": "Write unit tests for the review engine with mocked dependencies. Test the orchestration flow for both plan and implementation reviews. Verify correct handling of task context between pre and post reviews. Test performance with simulated large codebases.",
+      "priority": "high",
+      "dependencies": [
+        3,
+        4,
+        5
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 7,
+      "title": "Implement Tool Handlers",
+      "description": "Create the handler functions for the MCP tools that process incoming requests and return responses.",
+      "details": "1. Implement reviewPlanHandler:\n   ```typescript\n   async function reviewPlanHandler(params: ReviewPlanParams): Promise<ReviewResponse> {\n     try {\n       // Validate input parameters\n       // Call review engine\n       const response = await reviewEngine.reviewPlan(params);\n       return response;\n     } catch (error) {\n       // Handle and log errors\n       // Return appropriate error response\n     }\n   }\n   ```\n\n2. Implement reviewImplementationHandler:\n   ```typescript\n   async function reviewImplementationHandler(params: ReviewImplementationParams): Promise<ReviewResponse> {\n     try {\n       // Validate input parameters\n       // Call review engine\n       const response = await reviewEngine.reviewImplementation(params);\n       return response;\n     } catch (error) {\n       // Handle and log errors\n       // Return appropriate error response\n     }\n   }\n   ```\n\n3. Add parameter validation\n4. Implement error handling and logging\n5. Add performance monitoring",
+      "testStrategy": "Test handlers with various input parameters, including edge cases. Verify correct error handling for invalid inputs and internal errors. Test performance under load with simulated requests.",
+      "priority": "high",
+      "dependencies": [
+        2,
+        6
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 8,
+      "title": "Develop Configuration System",
+      "description": "Create a configuration system to manage server settings, API keys, and review templates.",
+      "details": "1. Implement ConfigManager class:\n   ```typescript\n   class ConfigManager {\n     private config: ServerConfig;\n     \n     constructor(configPath?: string) {\n       // Load configuration from file or environment variables\n     }\n     \n     getGeminiConfig(): GeminiConfig {\n       return this.config.gemini;\n     }\n     \n     getStorageConfig(): StorageConfig {\n       return this.config.storage;\n     }\n     \n     getRepomixConfig(): RepomixConfig {\n       return this.config.repomix;\n     }\n     \n     getReviewTemplates(): ReviewTemplates {\n       return this.config.reviewTemplates;\n     }\n   }\n   ```\n2. Define configuration interfaces:\n   ```typescript\n   interface ServerConfig {\n     gemini: GeminiConfig;\n     storage: StorageConfig;\n     repomix: RepomixConfig;\n     reviewTemplates: ReviewTemplates;\n   }\n   ```\n3. Implement secure storage for API keys\n4. Add configuration validation\n5. Support for environment-specific configurations",
+      "testStrategy": "Test configuration loading from files and environment variables. Verify secure handling of API keys. Test configuration validation with valid and invalid configurations. Test environment-specific configuration loading.",
+      "priority": "medium",
+      "dependencies": [
+        1
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 9,
+      "title": "Implement Security Features",
+      "description": "Develop security features including API key management, encryption, and audit logging.",
+      "details": "1. Implement secure API key storage:\n   ```typescript\n   class SecretManager {\n     async getGeminiApiKey(): Promise<string> {\n       // Retrieve API key from secure storage\n     }\n     \n     async storeGeminiApiKey(apiKey: string): Promise<void> {\n       // Store API key securely\n     }\n   }\n   ```\n2. Enhance file encryption for codebase snapshots\n3. Implement audit logging:\n   ```typescript\n   class AuditLogger {\n     logOperation(operation: string, details: any): void {\n       // Log operation with timestamp and details\n     }\n     \n     logError(operation: string, error: Error): void {\n       // Log error with stack trace\n     }\n   }\n   ```\n4. Add request validation and sanitization\n5. Implement data retention policies",
+      "testStrategy": "Test secure API key storage and retrieval. Verify encryption functionality for codebase snapshots. Test audit logging for various operations and errors. Verify data retention policy enforcement.",
+      "priority": "high",
+      "dependencies": [
+        3,
+        8
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 10,
+      "title": "Develop Prompt Engineering Templates",
+      "description": "Create optimized prompt templates for Gemini API to ensure consistent and high-quality reviews.",
+      "details": "1. Design plan review prompt template:\n   ```typescript\n   const planReviewPrompt = `\n   You are a senior software architect reviewing an implementation plan.\n   \n   Task Description: {{taskDescription}}\n   \n   Proposed Implementation Plan:\n   {{implementationPlan}}\n   \n   Current Codebase Context:\n   {{codebaseContext}}\n   \n   Please review the implementation plan and provide feedback on:\n   1. Architectural alignment with the existing codebase\n   2. Potential issues or concerns\n   3. Suggested improvements\n   4. Risk assessment\n   \n   Format your response as follows:\n   {{\n     \"summary\": \"Overall assessment summary\",\n     \"overallScore\": <score from 1-10>,\n     \"strengths\": [\"strength1\", \"strength2\", ...],\n     \"concerns\": [\"concern1\", \"concern2\", ...],\n     \"suggestions\": [\"suggestion1\", \"suggestion2\", ...],\n     \"risks\": [\"risk1\", \"risk2\", ...]\n   }}\n   `;\n   ```\n\n2. Design implementation review prompt template\n3. Create template substitution mechanism\n4. Add support for custom review criteria\n5. Implement template versioning",
+      "testStrategy": "Test prompt templates with various inputs to verify they produce consistent and useful responses from Gemini. Test template substitution mechanism with different variables. Verify custom review criteria can be incorporated into templates.",
+      "priority": "medium",
+      "dependencies": [
+        5
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 11,
+      "title": "Implement Task Context Management",
+      "description": "Develop functionality to maintain task context between pre-task and post-task reviews.",
+      "details": "1. Implement TaskContextManager class:\n   ```typescript\n   class TaskContextManager {\n     constructor(private storageManager: StorageManager) {}\n     \n     async storeTaskContext(taskId: string, context: {\n       taskDescription: string,\n       implementationPlan: string,\n       planReviewResponse: ReviewResponse,\n       codebaseSnapshotPath: string\n     }): Promise<void> {\n       // Store task context\n     }\n     \n     async getTaskContext(taskId: string): Promise<TaskContext | null> {\n       // Retrieve task context\n     }\n     \n     async linkImplementationReview(taskId: string, implementationReview: ReviewResponse): Promise<void> {\n       // Link implementation review to existing task context\n     }\n   }\n   ```\n2. Define TaskContext interface\n3. Implement persistence mechanism\n4. Add task context cleanup policy\n5. Implement context retrieval optimization",
+      "testStrategy": "Test storing and retrieving task contexts with various data. Verify linking of implementation reviews to existing contexts. Test context cleanup policy. Measure performance of context retrieval operations.",
+      "priority": "medium",
+      "dependencies": [
+        3,
+        6
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 12,
+      "title": "Develop Performance Optimization",
+      "description": "Implement performance optimizations for handling large codebases and ensuring sub-5 second response times.",
+      "details": "1. Implement codebase chunking for large repositories:\n   ```typescript\n   function chunkCodebase(codebase: string, maxChunkSize: number): string[] {\n     // Intelligently split codebase into chunks\n     // Prioritize keeping related files together\n   }\n   ```\n2. Add caching layer for repomix results\n3. Implement parallel processing where applicable\n4. Add response time monitoring\n5. Optimize Gemini API requests for faster responses",
+      "testStrategy": "Benchmark performance with various codebase sizes. Test chunking algorithm with large codebases. Measure response times with and without caching. Verify parallel processing improves performance for applicable operations.",
+      "priority": "medium",
+      "dependencies": [
+        4,
+        5,
+        6
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 13,
+      "title": "Implement Error Handling and Logging",
+      "description": "Develop comprehensive error handling and logging system for the server.",
+      "details": "1. Implement Logger class:\n   ```typescript\n   class Logger {\n     constructor(config: LoggerConfig) {}\n     \n     info(message: string, context?: any): void {\n       // Log info message\n     }\n     \n     error(message: string, error: Error, context?: any): void {\n       // Log error with stack trace\n     }\n     \n     warn(message: string, context?: any): void {\n       // Log warning\n     }\n     \n     debug(message: string, context?: any): void {\n       // Log debug message (only in development)\n     }\n   }\n   ```\n2. Create error handling middleware for MCP server\n3. Implement custom error classes\n4. Add error reporting mechanism\n5. Implement request/response logging",
+      "testStrategy": "Test logger with various message types and contexts. Verify error handling middleware correctly catches and processes errors. Test custom error classes. Verify request/response logging captures all necessary information.",
+      "priority": "medium",
+      "dependencies": [
+        2,
+        7
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 14,
+      "title": "Create Documentation and Examples",
+      "description": "Develop comprehensive documentation and usage examples for the MCP server.",
+      "details": "1. Create README.md with:\n   - Project overview\n   - Installation instructions\n   - Configuration guide\n   - Usage examples\n   - API documentation\n2. Document API interfaces\n3. Create example workflows:\n   ```typescript\n   // Example: Pre-task review workflow\n   const response = await client.callTool('review_plan', {\n     taskId: 'task-123',\n     taskDescription: 'Implement user authentication',\n     implementationPlan: 'I will use JWT for authentication...',\n     codebaseRoot: '/path/to/codebase'\n   });\n   \n   console.log(response.feedback.summary);\n   ```\n4. Add troubleshooting guide\n5. Create configuration templates",
+      "testStrategy": "Review documentation for completeness and accuracy. Test example workflows to ensure they work as documented. Verify configuration templates are valid and functional.",
+      "priority": "low",
+      "dependencies": [
+        1,
+        2,
+        7
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 15,
+      "title": "Implement Testing Framework",
+      "description": "Develop comprehensive testing framework including unit tests, integration tests, and performance tests.",
+      "details": "1. Setup testing framework with Jest or Mocha\n2. Implement unit tests for all components\n3. Create integration tests for end-to-end workflows\n4. Develop performance benchmarking tests\n5. Implement test fixtures and mocks:\n   ```typescript\n   // Example mock for GeminiClient\n   const mockGeminiClient = {\n     reviewPlan: jest.fn().mockResolvedValue({\n       taskId: 'task-123',\n       reviewType: 'plan',\n       overallScore: 8,\n       feedback: {\n         summary: 'Good plan overall',\n         strengths: ['Well structured', 'Follows best practices'],\n         concerns: ['Potential performance issue'],\n         suggestions: ['Consider caching results']\n       },\n       metadata: {\n         codebaseSize: 10000,\n         reviewTimestamp: new Date().toISOString(),\n         modelUsed: 'gemini-1.5-pro'\n       }\n     }),\n     reviewImplementation: jest.fn().mockResolvedValue(/* ... */)\n   };\n   ```",
+      "testStrategy": "Run the test suite regularly during development. Measure test coverage and aim for >80% coverage. Verify all critical paths are tested. Run performance tests with various codebase sizes to ensure performance requirements are met.",
+      "priority": "medium",
+      "dependencies": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "status": "pending",
+      "subtasks": []
+    }
+  ]
+}

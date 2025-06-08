@@ -1,0 +1,45 @@
+# Task ID: 10
+# Title: Develop Prompt Engineering Templates
+# Status: pending
+# Dependencies: 5
+# Priority: medium
+# Description: Create optimized prompt templates for Gemini API to ensure consistent and high-quality reviews.
+# Details:
+1. Design plan review prompt template:
+   ```typescript
+   const planReviewPrompt = `
+   You are a senior software architect reviewing an implementation plan.
+   
+   Task Description: {{taskDescription}}
+   
+   Proposed Implementation Plan:
+   {{implementationPlan}}
+   
+   Current Codebase Context:
+   {{codebaseContext}}
+   
+   Please review the implementation plan and provide feedback on:
+   1. Architectural alignment with the existing codebase
+   2. Potential issues or concerns
+   3. Suggested improvements
+   4. Risk assessment
+   
+   Format your response as follows:
+   {{
+     "summary": "Overall assessment summary",
+     "overallScore": <score from 1-10>,
+     "strengths": ["strength1", "strength2", ...],
+     "concerns": ["concern1", "concern2", ...],
+     "suggestions": ["suggestion1", "suggestion2", ...],
+     "risks": ["risk1", "risk2", ...]
+   }}
+   `;
+   ```
+
+2. Design implementation review prompt template
+3. Create template substitution mechanism
+4. Add support for custom review criteria
+5. Implement template versioning
+
+# Test Strategy:
+Test prompt templates with various inputs to verify they produce consistent and useful responses from Gemini. Test template substitution mechanism with different variables. Verify custom review criteria can be incorporated into templates.

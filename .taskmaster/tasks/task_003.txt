@@ -1,0 +1,43 @@
+# Task ID: 3
+# Title: Develop Storage Manager
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Create a storage manager component to handle temporary file storage for codebase snapshots in the user's .tmp directory.
+# Details:
+1. Implement StorageManager class with methods:
+   ```typescript
+   class StorageManager {
+     constructor(config: StorageConfig) {
+       // Initialize with cleanup policies, encryption settings
+     }
+     
+     async storeCodebaseSnapshot(taskId: string, content: string): Promise<string> {
+       // Store codebase snapshot in .tmp directory
+       // Return path to stored file
+     }
+     
+     async getCodebaseSnapshot(taskId: string): Promise<string | null> {
+       // Retrieve codebase snapshot
+     }
+     
+     async cleanupOldSnapshots(): Promise<void> {
+       // Remove snapshots based on retention policy
+     }
+     
+     async encryptAtRest(content: string): Promise<string> {
+       // Implement file encryption
+     }
+     
+     async decryptContent(encryptedContent: string): Promise<string> {
+       // Decrypt content
+     }
+   }
+   ```
+2. Implement file system operations using Node.js fs/promises
+3. Add configurable cleanup policies
+4. Implement basic encryption for files at rest
+5. Add error handling for file system operations
+
+# Test Strategy:
+Test file creation, retrieval, and deletion operations. Verify encryption and decryption functionality. Test cleanup policies by creating files with different timestamps and verifying correct files are removed. Test error handling for file system failures.

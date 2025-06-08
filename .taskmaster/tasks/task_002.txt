@@ -1,0 +1,40 @@
+# Task ID: 2
+# Title: Implement Core MCP Server
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Create the core MCP server implementation that handles protocol communication and exposes the required tools.
+# Details:
+1. Implement MCP server class using the TypeScript SDK
+2. Register the two main tools:
+   ```typescript
+   // Define tool schemas
+   const reviewPlanSchema = {
+     // Define schema based on ReviewPlanParams interface
+   };
+   
+   const reviewImplementationSchema = {
+     // Define schema based on ReviewImplementationParams interface
+   };
+   
+   // Register tools
+   server.registerTool({
+     name: 'review_plan',
+     description: 'Reviews implementation plan before coding',
+     schema: reviewPlanSchema,
+     handler: reviewPlanHandler
+   });
+   
+   server.registerTool({
+     name: 'review_implementation',
+     description: 'Reviews completed implementation',
+     schema: reviewImplementationSchema,
+     handler: reviewImplementationHandler
+   });
+   ```
+3. Implement server startup and shutdown procedures
+4. Add error handling and logging
+5. Create configuration loading mechanism
+
+# Test Strategy:
+Write unit tests for the MCP server initialization, tool registration, and basic request handling. Mock the tool handlers to verify correct parameter passing. Test error handling by simulating various error conditions.

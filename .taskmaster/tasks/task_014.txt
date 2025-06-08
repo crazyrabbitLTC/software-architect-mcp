@@ -1,0 +1,31 @@
+# Task ID: 14
+# Title: Create Documentation and Examples
+# Status: pending
+# Dependencies: 1, 2, 7
+# Priority: low
+# Description: Develop comprehensive documentation and usage examples for the MCP server.
+# Details:
+1. Create README.md with:
+   - Project overview
+   - Installation instructions
+   - Configuration guide
+   - Usage examples
+   - API documentation
+2. Document API interfaces
+3. Create example workflows:
+   ```typescript
+   // Example: Pre-task review workflow
+   const response = await client.callTool('review_plan', {
+     taskId: 'task-123',
+     taskDescription: 'Implement user authentication',
+     implementationPlan: 'I will use JWT for authentication...',
+     codebaseRoot: '/path/to/codebase'
+   });
+   
+   console.log(response.feedback.summary);
+   ```
+4. Add troubleshooting guide
+5. Create configuration templates
+
+# Test Strategy:
+Review documentation for completeness and accuracy. Test example workflows to ensure they work as documented. Verify configuration templates are valid and functional.

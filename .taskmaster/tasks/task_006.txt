@@ -1,0 +1,45 @@
+# Task ID: 6
+# Title: Create Review Engine
+# Status: pending
+# Dependencies: 3, 4, 5
+# Priority: high
+# Description: Develop the review engine that orchestrates the review process, combining codebase context with task information and processing Gemini responses.
+# Details:
+1. Implement ReviewEngine class:
+   ```typescript
+   class ReviewEngine {
+     constructor(
+       private repomixManager: RepomixManager,
+       private storageManager: StorageManager,
+       private geminiClient: GeminiClient
+     ) {}
+     
+     async reviewPlan(params: ReviewPlanParams): Promise<ReviewResponse> {
+       // Orchestrate plan review process
+       // 1. Flatten codebase using repomixManager
+       // 2. Store snapshot using storageManager
+       // 3. Send to Gemini using geminiClient
+       // 4. Process and return response
+     }
+     
+     async reviewImplementation(params: ReviewImplementationParams): Promise<ReviewResponse> {
+       // Orchestrate implementation review process
+       // 1. Get previous snapshot
+       // 2. Create new snapshot
+       // 3. Generate diff
+       // 4. Send to Gemini
+       // 5. Process and return response
+     }
+     
+     private formatReviewResponse(geminiResponse: any): ReviewResponse {
+       // Format raw Gemini response into structured ReviewResponse
+     }
+   }
+   ```
+2. Implement context preparation logic
+3. Add response processing and formatting
+4. Implement task tracking between pre and post reviews
+5. Add performance optimization for large codebases
+
+# Test Strategy:
+Write unit tests for the review engine with mocked dependencies. Test the orchestration flow for both plan and implementation reviews. Verify correct handling of task context between pre and post reviews. Test performance with simulated large codebases.
