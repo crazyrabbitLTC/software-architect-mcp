@@ -1,6 +1,6 @@
 # Task ID: 3
 # Title: Develop Storage Manager
-# Status: pending
+# Status: in-progress
 # Dependencies: 1
 # Priority: medium
 # Description: Create a storage manager component to handle temporary file storage for codebase snapshots in the user's .tmp directory.
