@@ -5,7 +5,7 @@
 
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { logger } from '../utils/logger.js';
-import type { ReviewPlanParams, ReviewImplementationParams, ReviewResponse, GeminiConfig } from '../types/index.js';
+import type { ReviewPlanParams, ReviewImplementationParams, CodeReviewParams, ReviewResponse, GeminiConfig } from '../types/index.js';
 
 export class GeminiClient {
   private client: GoogleGenerativeAI;
@@ -74,6 +74,32 @@ export class GeminiClient {
       return this.parseReviewResponse(text, 'implementation', params.taskId);
     } catch (error) {
       logger.error('Error calling Gemini API for implementation review:', error);
+      throw error;
+    }
+  }
+
+  async codeReview(params: CodeReviewParams): Promise<ReviewResponse> {
+    logger.info('Performing general code review');
+    
+    const prompt = this.buildCodeReviewPrompt(params);
+    
+    try {
+      // Use Pro model for code reviews (better for comprehensive analysis)
+      const result = await this.proModel.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 8192,
+          responseMimeType: 'application/json'
+        }
+      });
+
+      const response = result.response;
+      const text = response.text();
+      
+      return this.parseReviewResponse(text, 'plan', 'code-review-' + Date.now());
+    } catch (error) {
+      logger.error('Error calling Gemini API for code review:', error);
       throw error;
     }
   }
@@ -149,6 +175,43 @@ Consider:
 4. Documentation completeness
 5. Security and performance
 6. Any technical debt introduced`;
+  }
+
+  private buildCodeReviewPrompt(params: CodeReviewParams): string {
+    const focusSection = params.reviewFocus 
+      ? `\n\nSpecial Focus: ${params.reviewFocus}\nPay particular attention to this area in your review.`
+      : '';
+
+    return `You are a senior software engineer conducting a comprehensive code review. Analyze the provided codebase and provide structured feedback.
+
+Codebase to Review:
+${params.codebaseContext}${focusSection}
+
+Please provide a JSON response with the following structure:
+{
+  "approved": boolean,
+  "feedback": {
+    "summary": "Brief overall assessment of the codebase",
+    "issues": ["List of problems, bugs, or concerns found"],
+    "suggestions": ["List of recommendations for improvement"],
+    "strengths": ["List of positive aspects and good practices"]
+  },
+  "metadata": {
+    "confidence": 0.0-1.0
+  }
+}
+
+Focus your review on:
+1. Code quality and maintainability
+2. Security vulnerabilities and best practices
+3. Performance implications
+4. Architecture and design patterns
+5. Error handling and edge cases
+6. Documentation and code clarity
+7. Testing coverage and test quality
+8. Dependencies and third-party usage
+9. Consistency with coding standards
+10. Potential refactoring opportunities`;
   }
 
   private parseReviewResponse(responseText: string, reviewType: 'plan' | 'implementation', taskId: string): ReviewResponse {

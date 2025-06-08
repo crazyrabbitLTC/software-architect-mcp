@@ -156,6 +156,41 @@ export class MCPServer {
         }
       }
     );
+
+    // Define code_review tool
+    this.server.tool(
+      'code_review',
+      {
+        codebasePath: z.string().describe('Path to the codebase to review'),
+        reviewFocus: z.string().optional().describe('Specific area to focus the review on (e.g., security, performance, architecture)')
+      },
+      async (params) => {
+        logger.info('Handling code_review request', { codebasePath: params.codebasePath });
+        
+        try {
+          // Flatten the codebase for context
+          const flattenedCode = await this.flattener.flattenCodebase(params.codebasePath);
+          if (!flattenedCode) {
+            throw new Error('Failed to flatten codebase');
+          }
+
+          const response = await this.gemini.codeReview({
+            codebaseContext: flattenedCode,
+            reviewFocus: params.reviewFocus
+          });
+          
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(response, null, 2)
+            }]
+          };
+        } catch (error) {
+          logger.error('Error in code_review', error);
+          throw error;
+        }
+      }
+    );
   }
 
   async start(transport: StdioServerTransport) {

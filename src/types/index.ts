@@ -18,6 +18,11 @@ export interface ReviewImplementationParams {
   codebaseSnapshot: string;
 }
 
+export interface CodeReviewParams {
+  codebaseContext: string;
+  reviewFocus?: string;
+}
+
 // Review response types
 export interface ReviewFeedback {
   summary: string;
