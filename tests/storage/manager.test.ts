@@ -1,20 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StorageManager } from '../../src/storage/manager.js';
 import type { PathLike, Stats } from 'fs';
-import * as fs from 'fs-extra';
 import * as path from 'path';
 import type { StorageConfig, TaskContext } from '../../src/types/index.js';
+import fs from 'fs-extra';
 
 // Mock fs-extra
 vi.mock('fs-extra', () => ({
-  ensureDir: vi.fn().mockResolvedValue(undefined),
-  writeFile: vi.fn().mockResolvedValue(undefined),
-  readFile: vi.fn().mockResolvedValue(''),
-  pathExists: vi.fn().mockResolvedValue(false),
-  readdir: vi.fn().mockResolvedValue([]),
-  stat: vi.fn().mockResolvedValue({ size: 0, mtimeMs: 0 } as Stats),
-  remove: vi.fn().mockResolvedValue(undefined)
+  default: {
+    ensureDir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue(''),
+    pathExists: vi.fn().mockResolvedValue(false),
+    readdir: vi.fn().mockResolvedValue([]),
+    stat: vi.fn().mockResolvedValue({ size: 0, mtimeMs: 0 } as Stats),
+    remove: vi.fn().mockResolvedValue(undefined)
+  }
 }));
+
+const mockFs = vi.mocked(fs);
 
 describe('StorageManager', () => {
   let storage: StorageManager;
@@ -39,9 +43,9 @@ describe('StorageManager', () => {
     it('should create required directories on initialize', async () => {
       await storage.initialize();
       
-      expect(fs.ensureDir).toHaveBeenCalledWith(testBasePath);
-      expect(fs.ensureDir).toHaveBeenCalledWith(path.join(testBasePath, 'snapshots'));
-      expect(fs.ensureDir).toHaveBeenCalledWith(path.join(testBasePath, 'tasks'));
+      expect(mockFs.ensureDir).toHaveBeenCalledWith(testBasePath);
+      expect(mockFs.ensureDir).toHaveBeenCalledWith(path.join(testBasePath, 'snapshots'));
+      expect(mockFs.ensureDir).toHaveBeenCalledWith(path.join(testBasePath, 'tasks'));
     });
   });
 
@@ -50,13 +54,13 @@ describe('StorageManager', () => {
       const taskId = 'test-123';
       const content = 'test content';
       
-      vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
+      mockFs.writeFile.mockResolvedValueOnce(undefined);
       
       const snapshotId = await storage.storeSnapshot(taskId, content, 'pre');
       
       expect(snapshotId).toContain(taskId);
       expect(snapshotId).toContain('pre');
-      expect(fs.writeFile).toHaveBeenCalledWith(
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining(snapshotId),
         content
       );
@@ -66,13 +70,13 @@ describe('StorageManager', () => {
       const taskId = 'test-123';
       const content = 'test content';
       
-      vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
+      mockFs.writeFile.mockResolvedValueOnce(undefined);
       
       const snapshotId = await storage.storeSnapshot(taskId, content, 'post');
       
       expect(snapshotId).toContain(taskId);
       expect(snapshotId).toContain('post');
-      expect(fs.writeFile).toHaveBeenCalledWith(
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining(snapshotId),
         content
       );
@@ -89,8 +93,8 @@ describe('StorageManager', () => {
       const snapshotId = 'test-123-pre-1234567890';
       const content = 'test content';
       
-      vi.mocked(fs.pathExists).mockResolvedValueOnce(true);
-      vi.mocked(fs.readFile).mockResolvedValueOnce(Buffer.from(content));
+      mockFs.pathExists.mockResolvedValueOnce(true);
+      mockFs.readFile.mockResolvedValueOnce(Buffer.from(content));
       
       const retrieved = await storage.retrieveSnapshot(snapshotId);
       
@@ -98,7 +102,7 @@ describe('StorageManager', () => {
     });
 
     it('should throw error if snapshot not found', async () => {
-      vi.mocked(fs.pathExists).mockResolvedValueOnce(false);
+      mockFs.pathExists.mockResolvedValueOnce(false);
       
       await expect(storage.retrieveSnapshot('nonexistent'))
         .rejects.toThrow('Snapshot not found');
@@ -119,11 +123,11 @@ describe('StorageManager', () => {
     };
 
     it('should store task context', async () => {
-      vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
+      mockFs.writeFile.mockResolvedValueOnce(undefined);
       
       await storage.storeTaskContext(testContext.taskId, testContext);
       
-      expect(fs.writeFile).toHaveBeenCalledWith(
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining(testContext.taskId),
         expect.any(String)
       );
@@ -131,7 +135,7 @@ describe('StorageManager', () => {
 
     it('should retrieve task context', async () => {
       vi.mocked(fs.pathExists).mockResolvedValueOnce(true);
-      vi.mocked(fs.readFile).mockResolvedValueOnce(Buffer.from(JSON.stringify(testContext)));
+      mockFs.readFile.mockResolvedValueOnce(Buffer.from(JSON.stringify(testContext)));
       
       const retrieved = await storage.retrieveTaskContext(testContext.taskId);
       
@@ -139,7 +143,7 @@ describe('StorageManager', () => {
     });
 
     it('should return null if task context not found', async () => {
-      vi.mocked(fs.pathExists).mockResolvedValueOnce(false);
+      mockFs.pathExists.mockResolvedValueOnce(false);
       
       const retrieved = await storage.retrieveTaskContext('nonexistent');
       
@@ -158,12 +162,12 @@ describe('StorageManager', () => {
     });
 
     it('should encrypt content when storing snapshot', async () => {
-      vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
+      mockFs.writeFile.mockResolvedValueOnce(undefined);
       
       const content = 'sensitive data';
       const snapshotId = await encryptedStorage.storeSnapshot('test', content, 'pre');
       
-      const writtenData = vi.mocked(fs.writeFile).mock.calls[0][1] as string;
+      const writtenData = mockFs.writeFile.mock.calls[0][1] as string;
       expect(writtenData).not.toBe(content);
       expect(writtenData).toContain(':'); // IV separator
     });
@@ -173,12 +177,12 @@ describe('StorageManager', () => {
       vi.mocked(fs.pathExists).mockResolvedValueOnce(true);
       
       // Store encrypted content
-      vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
+      mockFs.writeFile.mockResolvedValueOnce(undefined);
       const snapshotId = await encryptedStorage.storeSnapshot('test', content, 'pre');
-      const encryptedData = vi.mocked(fs.writeFile).mock.calls[0][1] as string;
+      const encryptedData = mockFs.writeFile.mock.calls[0][1] as string;
       
       // Retrieve and decrypt
-      vi.mocked(fs.readFile).mockResolvedValueOnce(Buffer.from(encryptedData));
+      mockFs.readFile.mockResolvedValueOnce(Buffer.from(encryptedData));
       const retrieved = await encryptedStorage.retrieveSnapshot(snapshotId);
       
       expect(retrieved).toBe(content);
@@ -190,8 +194,8 @@ describe('StorageManager', () => {
       const now = Date.now();
       const oldDate = now - (8 * 24 * 60 * 60 * 1000); // 8 days old
       
-      vi.mocked(fs.readdir).mockResolvedValueOnce(['old-snapshot.txt', 'new-snapshot.txt']);
-      vi.mocked(fs.stat).mockImplementation((path: PathLike) => {
+      mockFs.readdir.mockResolvedValueOnce(['old-snapshot.txt', 'new-snapshot.txt']);
+      mockFs.stat.mockImplementation((path: PathLike) => {
         return Promise.resolve({
           mtimeMs: path.toString().includes('old') ? oldDate : now,
           size: 0,
@@ -219,21 +223,21 @@ describe('StorageManager', () => {
       
       await storage.cleanup(7); // 7 days threshold
       
-      expect(fs.remove).toHaveBeenCalledWith(expect.stringContaining('old-snapshot.txt'));
-      expect(fs.remove).not.toHaveBeenCalledWith(expect.stringContaining('new-snapshot.txt'));
+      expect(mockFs.remove).toHaveBeenCalledWith(expect.stringContaining('old-snapshot.txt'));
+      expect(mockFs.remove).not.toHaveBeenCalledWith(expect.stringContaining('new-snapshot.txt'));
     });
   });
 
   describe('storage stats', () => {
     it('should return storage statistics', async () => {
-      vi.mocked(fs.readdir).mockImplementation((path: PathLike) => {
+      mockFs.readdir.mockImplementation((path: PathLike) => {
         if (path.toString().includes('snapshots')) {
           return Promise.resolve(['snap1.txt', 'snap2.txt']);
         }
         return Promise.resolve(['task1.json']);
       });
       
-      vi.mocked(fs.stat).mockResolvedValue({
+      mockFs.stat.mockResolvedValue({
         size: 1024 * 1024, // 1MB
         mtimeMs: Date.now(),
         isFile: () => true,

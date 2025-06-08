@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GeminiClient } from '../../src/gemini/client.js';
-import type { GeminiConfig, ReviewPlanParams, ReviewImplementationParams } from '../../src/types/index.js';
+import type { GeminiConfig, GeminiReviewPlanParams, GeminiReviewImplementationParams } from '../../src/types/index.js';
 
 // Mock Google Generative AI
 vi.mock('@google/generative-ai', () => ({
@@ -51,7 +51,7 @@ describe('GeminiClient', () => {
 
   describe('reviewPlan', () => {
     it('should review a plan and return structured response', async () => {
-      const params: ReviewPlanParams = {
+      const params: GeminiReviewPlanParams = {
         taskId: 'test-123',
         taskDescription: 'Implement user authentication',
         implementationPlan: 'Use JWT tokens with refresh token rotation',
@@ -69,7 +69,7 @@ describe('GeminiClient', () => {
     });
 
     it('should include model used in metadata', async () => {
-      const params: ReviewPlanParams = {
+      const params: GeminiReviewPlanParams = {
         taskId: 'test-123',
         taskDescription: 'Test task',
         implementationPlan: 'Test plan',
@@ -83,7 +83,7 @@ describe('GeminiClient', () => {
 
   describe('reviewImplementation', () => {
     it('should review implementation and return structured response', async () => {
-      const params: ReviewImplementationParams = {
+      const params: GeminiReviewImplementationParams = {
         taskId: 'test-456',
         taskDescription: 'Implement user authentication',
         originalPlan: 'Use JWT tokens with refresh token rotation',
@@ -101,7 +101,7 @@ describe('GeminiClient', () => {
     });
 
     it('should use flash model for implementation reviews', async () => {
-      const params: ReviewImplementationParams = {
+      const params: GeminiReviewImplementationParams = {
         taskId: 'test-456',
         taskDescription: 'Test task',
         originalPlan: 'Test plan',
@@ -126,7 +126,7 @@ describe('GeminiClient', () => {
       }) as any);
 
       const errorClient = new GeminiClient(testConfig);
-      const params: ReviewPlanParams = {
+      const params: GeminiReviewPlanParams = {
         taskId: 'test-error',
         taskDescription: 'Test task',
         implementationPlan: 'Test plan',
@@ -150,7 +150,7 @@ describe('GeminiClient', () => {
       }) as any);
 
       const errorClient = new GeminiClient(testConfig);
-      const params: ReviewPlanParams = {
+      const params: GeminiReviewPlanParams = {
         taskId: 'test-parse-error',
         taskDescription: 'Test task',
         implementationPlan: 'Test plan',
