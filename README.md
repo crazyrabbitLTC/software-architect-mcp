@@ -18,8 +18,8 @@ CodeSentry is a Model Context Protocol (MCP) server that provides comprehensive 
 
 1. **Install & Build:**
    ```bash
-   git clone https://github.com/crazyrabbitLTC/software-architect-mcp.git
-   cd software-architect-mcp
+   git clone https://github.com/crazyrabbitLTC/mcp-codesentry.git
+   cd mcp-codesentry
    npm install && npm run build
    ```
 
@@ -29,7 +29,7 @@ CodeSentry is a Model Context Protocol (MCP) server that provides comprehensive 
      "mcpServers": {
        "codesentry": {
          "command": "node",
-         "args": ["/path/to/software-architect-mcp/dist/index.js"],
+         "args": ["/path/to/mcp-codesentry/dist/index.js"],
          "env": {
            "GEMINI_API_KEY": "your-api-key-here"
          }
@@ -54,7 +54,7 @@ CodeSentry is a Model Context Protocol (MCP) server that provides comprehensive 
    {
      "codesentry": {
        "command": "node",
-       "args": ["/path/to/software-architect-mcp/dist/index.js"],
+       "args": ["/path/to/mcp-codesentry/dist/index.js"],
        "env": {
          "GEMINI_API_KEY": "your-api-key-here"
        }
