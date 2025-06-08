@@ -40,6 +40,17 @@ export interface CodeReviewParams {
   reviewFocus?: string;
 }
 
+export interface SecurityReviewParams {
+  codebaseContext: string;
+  securityFocus?: string;
+}
+
+export interface BestPracticesReviewParams {
+  codebaseContext: string;
+  practicesFocus?: string;
+  language?: string;
+}
+
 // Review response types
 export interface ReviewFeedback {
   summary: string;

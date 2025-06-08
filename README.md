@@ -1,209 +1,175 @@
-# Software Architect MCP Server
+# CodeSentry MCP 🛡️
 
-An intelligent code review assistant that provides comprehensive code analysis through the Model Context Protocol (MCP). Offers pre-task planning reviews, post-task implementation reviews, and general codebase analysis powered by Google Gemini's large context capabilities.
+**AI-powered code review assistant for LLM development workflows**
+
+CodeSentry is a Model Context Protocol (MCP) server that provides comprehensive code review capabilities through 5 specialized review tools. Built for Cursor, Claude Code, and other MCP-compatible AI assistants.
 
 ## ✨ Features
 
-- **🔍 Pre-Task Planning Review** - Validates implementation plans against full codebase context
-- **📊 Post-Implementation Review** - Compares completed work against original plans using diff analysis  
-- **🏗️ General Code Review** - Analyzes entire codebases for architecture, security, and best practices
-- **🔒 Secure Storage** - AES-256-GCM encryption for task contexts and code snapshots
-- **📈 Performance Monitoring** - Built-in timing and metrics for all operations
-- **🛡️ Robust Error Handling** - Structured validation, logging, and error recovery
-- **🔄 Context Persistence** - Links pre/post reviews with task context management
+🔍 **Plan Review** - Validates implementation plans against codebase context  
+📊 **Implementation Review** - Compares completed work vs. original plans  
+🏗️ **Code Review** - General codebase analysis with focus areas  
+🔒 **Security Review** - Vulnerability assessment and security analysis  
+📐 **Best Practices Review** - Code quality and maintainability analysis  
 
-## Quick Start
+## 🚀 Quick Start
 
-1. **Install dependencies:**
+### For Cursor
+
+1. **Install & Build:**
    ```bash
-   npm install
+   git clone https://github.com/crazyrabbitLTC/software-architect-mcp.git
+   cd software-architect-mcp
+   npm install && npm run build
    ```
 
-2. **Set up environment:**
-   ```bash
-   cp env.example .env
-   # Edit .env and add your Gemini API key
+2. **Add to Cursor Settings** (`Cmd/Ctrl + ,` → Extensions → MCP):
+   ```json
+   {
+     "mcpServers": {
+       "codesentry": {
+         "command": "node",
+         "args": ["/path/to/software-architect-mcp/dist/index.js"],
+         "env": {
+           "GEMINI_API_KEY": "your-api-key-here"
+         }
+       }
+     }
+   }
    ```
 
-3. **Build and start:**
-   ```bash
-   npm run build
-   npm start
+3. **Get API Key:** [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+4. **Use in Chat:**
+   ```
+   @codesentry Please review this codebase for security issues
    ```
 
-4. **Test with JSON input:**
-   ```bash
-   echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "review_plan", "arguments": {"taskId": "test-123", "taskDescription": "Test feature", "implementationPlan": "I will implement a test feature", "codebasePath": "."}}}' | npm start
+### For Claude Code
+
+1. **Complete steps 1-3 above**
+
+2. **Add to MCP Settings** (`~/.claude/mcp_servers.json`):
+   ```json
+   {
+     "codesentry": {
+       "command": "node",
+       "args": ["/path/to/software-architect-mcp/dist/index.js"],
+       "env": {
+         "GEMINI_API_KEY": "your-api-key-here"
+       }
+     }
+   }
    ```
 
-## How It Works
+## 🔧 Available Tools
 
-The server acts as a **context firewall** - processing large codebases internally and returning concise, actionable feedback to AI assistants:
-
-```
-LLM → MCP Tool → Repomix Flattening → Gemini Analysis → Structured Review → LLM
-```
-
-**Key Benefits:**
-- ✅ Prevents context window bloat in calling LLMs
-- ✅ Leverages Gemini's 2M+ token context for full codebase analysis  
-- ✅ Provides consistent, structured feedback format
-- ✅ Maintains task context between planning and implementation phases
-
-## Usage with AI Assistants
-
-### Claude Code (claude.ai/code)
-
-Add to your MCP settings in `~/.claude/mcp_servers.json`:
-
-```json
+### `security_review`
+```typescript
+// Comprehensive security vulnerability assessment
 {
-  "software-architect": {
-    "command": "node",
-    "args": ["/path/to/software-architect-mcp/dist/index.js"],
-    "env": {
-      "GEMINI_API_KEY": "your-api-key-here"
-    }
-  }
+  "codebasePath": "./src",
+  "securityFocus": "authentication" // optional
 }
 ```
 
-### Cursor
-
-Add to your Cursor MCP configuration:
-
-```json
+### `best_practices_review`
+```typescript
+// Code quality and maintainability analysis
 {
-  "mcpServers": {
-    "software-architect": {
-      "command": "node",
-      "args": ["/path/to/software-architect-mcp/dist/index.js"],
-      "env": {
-        "GEMINI_API_KEY": "your-api-key-here"
-      }
-    }
-  }
+  "codebasePath": "./src", 
+  "practicesFocus": "testing", // optional
+  "language": "TypeScript" // optional
 }
 ```
 
-## API Reference
-
-### 🎯 review_plan
-Reviews implementation plans before execution:
-```json
+### `code_review`
+```typescript
+// General codebase analysis
 {
-  "taskId": "unique-task-id",
-  "taskDescription": "Description of task",  
-  "implementationPlan": "Detailed implementation plan",
-  "codebasePath": "path/to/codebase"
+  "codebasePath": "./src",
+  "reviewFocus": "performance" // optional
 }
 ```
 
-**Returns:** Structured feedback with approval status, issues, suggestions, and strengths.
-
-### 🔄 review_implementation  
-Reviews completed implementations against original plans:
-```json
+### `review_plan`
+```typescript
+// Pre-task planning validation
 {
-  "taskId": "same-task-id-from-plan",
-  "taskDescription": "Description of completed task", 
-  "originalPlan": "Original plan from review_plan",
-  "implementationSummary": "What was actually implemented",
-  "beforePath": "path/to/codebase/before", 
-  "afterPath": "path/to/codebase/after"
+  "taskId": "feature-123",
+  "taskDescription": "Add user authentication",
+  "implementationPlan": "Use JWT with refresh tokens...",
+  "codebasePath": "./src"
 }
 ```
 
-**Returns:** Comparative analysis of implementation vs. plan with detailed feedback.
-
-### 🏗️ code_review
-General codebase analysis and review:
-```json
+### `review_implementation`
+```typescript
+// Post-task implementation review
 {
-  "codebasePath": "path/to/codebase",
-  "reviewFocus": "architecture|security|performance" // optional
+  "taskId": "feature-123",
+  "taskDescription": "Add user authentication", 
+  "originalPlan": "Use JWT with refresh tokens...",
+  "implementationSummary": "Implemented JWT auth with Redis...",
+  "beforePath": "./before",
+  "afterPath": "./after"
 }
 ```
 
-**Returns:** Comprehensive codebase analysis with architectural recommendations.
+## 🏗️ How It Works
 
-## Architecture
+```
+AI Assistant → MCP Tool → Repomix Analysis → Gemini Review → Structured Feedback
+```
 
-### Core Components
+**Benefits:**
+- ✅ Handles large codebases without context window limits
+- ✅ Leverages Gemini's 2M+ token context for full analysis
+- ✅ Returns concise, actionable feedback
+- ✅ Maintains context between planning and implementation
 
-- **ReviewEngine** - Orchestrates the complete review workflow
-- **GeminiClient** - Handles AI model communication with structured prompts
-- **StorageManager** - Manages encrypted snapshots and task contexts  
-- **CodeFlattener** - Bundles Repomix for codebase processing
-- **MCPServer** - Exposes tools via Model Context Protocol
+## 🛡️ Security & Privacy
 
-### Security Features
+- **🔐 Local Processing** - Your code stays on your machine
+- **🔑 API Key Security** - Environment variables only
+- **🗑️ Auto Cleanup** - Temporary files automatically deleted
+- **📝 Audit Logging** - Comprehensive operation logs
 
-- **🔐 AES-256-GCM Encryption** - Authenticated encryption for stored data
-- **🛡️ Input Validation** - Comprehensive parameter validation and sanitization
-- **📝 Audit Logging** - Detailed operation logs with performance metrics
-- **🚫 Path Sanitization** - Prevents directory traversal attacks
-- **⏰ Automatic Cleanup** - Configurable retention policies for temporary data
-
-### Performance Optimizations
-
-- **📊 Performance Monitoring** - Built-in timing for all operations
-- **🗂️ Efficient Storage** - Temporary file management with size limits
-- **⚡ Model Selection** - Pro model for complex planning, Flash for implementation
-- **🔄 Context Reuse** - Persistent task contexts between review phases
-
-## Environment Variables
-
-- `GEMINI_API_KEY` - Required Google Gemini API key
-- `GEMINI_PRO_MODEL` - Model for plan reviews (default: gemini-1.5-pro)
-- `GEMINI_FLASH_MODEL` - Model for implementation reviews (default: gemini-1.5-flash)
-
-## Development
+## 🧪 Development
 
 ```bash
-npm run dev          # Development mode with file watching
-npm test             # Run comprehensive test suite
-npm run build        # TypeScript compilation
-npm run lint         # ESLint checking
+npm run dev          # Development mode
+npm test             # Run test suite (32 tests)
+npm run build        # TypeScript build
+npm run lint         # Code linting
 ```
 
-### Testing
-- **Unit Tests** - All core components with 95%+ coverage
-- **Integration Tests** - End-to-end workflow validation
-- **Mock Strategy** - No external API calls in tests
+## 📋 Requirements
 
-## Technologies
+- **Node.js** 18+
+- **Google Gemini API Key** ([Get one free](https://aistudio.google.com/app/apikey))
+- **MCP-compatible AI Assistant** (Cursor, Claude Code, etc.)
 
-- **TypeScript** - Primary development language with strict typing
-- **Model Context Protocol SDK** - For MCP server implementation
-- **Repomix** - Codebase flattening and analysis (bundled)
-- **Google Gemini API** - AI-powered code review with large context
-- **Vitest** - Modern testing framework
-- **Winston** - Structured logging
-- **Node.js** - Runtime environment
-
-## Production Deployment
-
-The server is production-ready with:
-
-- ✅ **Robust Error Handling** - Structured error codes and recovery
-- ✅ **Security Hardening** - Encrypted storage and input validation  
-- ✅ **Performance Monitoring** - Built-in metrics and logging
-- ✅ **Scalable Architecture** - Modular design for easy extension
-- ✅ **Comprehensive Testing** - Unit and integration test coverage
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+3. Add tests for new functionality  
+4. Submit a pull request
 
-## Author
+## 👨‍💻 Authors
 
-Dennison Bertram - dennison@tally.xyz
+**Dennison Bertram** - *Creator & Maintainer*  
+GitHub: [@crazyrabbitLTC](https://github.com/crazyrabbitLTC)  
+Email: dennison@tally.xyz
 
-## License
+**Claude (Anthropic)** - *AI Development Partner*  
+Assisted with architecture, implementation, and testing
+
+## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+**⭐ Star this repo if CodeSentry helps improve your code quality!**

@@ -8,9 +8,12 @@ This is a Model Context Protocol (MCP) server that provides intelligent code rev
 
 ## Core Architecture
 
-The server exposes two main MCP tools:
+The server exposes five main MCP tools:
 - `review_plan`: Pre-task review that analyzes implementation plans against the current codebase
 - `review_implementation`: Post-task review that compares implementations against original plans
+- `code_review`: General code review with comprehensive analysis and optional focus areas
+- `security_review`: Security-focused code review with specialized vulnerability assessment
+- `best_practices_review`: Best practices review focusing on code quality, maintainability, and industry standards
 
 ### Key Components
 
@@ -76,6 +79,60 @@ Reviews completed implementations:
   "afterPath": "path/to/codebase/after"
 }
 ```
+
+### code_review
+Performs general code review with comprehensive analysis:
+```json
+{
+  "codebasePath": "path/to/codebase",
+  "reviewFocus": "Optional focus area (e.g., performance, architecture)"
+}
+```
+
+### security_review  
+Conducts security-focused code review with vulnerability assessment:
+```json
+{
+  "codebasePath": "path/to/codebase",
+  "securityFocus": "Optional security focus (e.g., authentication, input validation, cryptography)"
+}
+```
+
+The security review includes comprehensive analysis of:
+- Authentication & Authorization vulnerabilities
+- Input Validation & Injection Attacks (SQL, XSS, Command injection)
+- Data Security & Privacy issues
+- Network Security misconfigurations
+- Code Security Practices (hardcoded secrets, weak crypto)
+- Infrastructure Security vulnerabilities
+- Error Handling & Information Disclosure
+- Business Logic Security flaws
+- Compliance with OWASP Top 10 and security standards
+- Incident Response readiness
+
+### best_practices_review  
+Conducts comprehensive best practices review focusing on code quality and maintainability:
+```json
+{
+  "codebasePath": "path/to/codebase",
+  "practicesFocus": "Optional focus area (e.g., naming, testing, documentation, performance)",
+  "language": "Optional primary language for language-specific best practices"
+}
+```
+
+The best practices review includes comprehensive analysis of:
+- Code Organization & Architecture (SOLID principles, design patterns)
+- Naming Conventions & Readability (descriptive names, consistency)
+- Function & Method Design (single responsibility, parameter management)
+- Error Handling & Resilience (consistent patterns, graceful degradation)
+- Documentation & Comments (clear documentation, meaningful comments)
+- Testing Practices (coverage, TDD, test organization)
+- Performance & Efficiency (algorithm complexity, resource optimization)
+- Code Duplication & DRY Principle (reusability, abstraction)
+- Version Control & Collaboration (commit quality, code review practices)
+- Maintainability & Technical Debt (refactoring opportunities)
+- Language-Specific Best Practices (idiomatic patterns, conventions)
+- Logging & Monitoring (structured logging, performance monitoring)
 
 ## Security Notes
 

@@ -305,6 +305,145 @@ export class MCPServer {
         }
       }
     );
+
+    // Define security_review tool
+    this.server.tool(
+      'security_review',
+      {
+        codebasePath: z.string().describe('Path to the codebase to review for security vulnerabilities'),
+        securityFocus: z.string().optional().describe('Specific security area to focus on (e.g., authentication, input validation, cryptography)')
+      },
+      async (params) => {
+        const startTime = Date.now();
+        logger.info('Handling security_review request', { 
+          codebasePath: params.codebasePath,
+          securityFocus: params.securityFocus 
+        });
+        
+        try {
+          // Validate inputs
+          if (!params.codebasePath.trim()) {
+            throw new Error('VALIDATION_ERROR: codebasePath cannot be empty');
+          }
+
+          // Flatten the codebase for context
+          logger.debug('Flattening codebase for security review', { codebasePath: params.codebasePath });
+          const flattenedCode = await this.flattener.flattenCodebase(params.codebasePath);
+          if (!flattenedCode) {
+            throw new Error('CODEBASE_ERROR: Failed to flatten codebase - check if path exists and is accessible');
+          }
+
+          logger.debug('Sending security review request to Gemini', { securityFocus: params.securityFocus });
+          const response = await this.gemini.securityReview({
+            codebaseContext: flattenedCode,
+            securityFocus: params.securityFocus
+          });
+          
+          const duration = Date.now() - startTime;
+          logger.info('Successfully completed security_review', { 
+            codebasePath: params.codebasePath,
+            durationMs: duration 
+          });
+
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(response, null, 2)
+            }]
+          };
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorCode = errorMessage.includes(':') ? errorMessage.split(':')[0] : 'UNKNOWN_ERROR';
+          
+          logger.error('Error in security_review', {
+            codebasePath: params.codebasePath,
+            securityFocus: params.securityFocus,
+            errorCode,
+            errorMessage,
+            durationMs: duration
+          });
+
+          // Throw structured error with more context
+          const structuredError = new Error(`SECURITY_REVIEW_FAILED: ${errorMessage}`);
+          structuredError.name = errorCode;
+          throw structuredError;
+        }
+      }
+    );
+
+    // Define best_practices_review tool
+    this.server.tool(
+      'best_practices_review',
+      {
+        codebasePath: z.string().describe('Path to the codebase to review for best practices'),
+        practicesFocus: z.string().optional().describe('Specific practices area to focus on (e.g., naming, testing, documentation, performance)'),
+        language: z.string().optional().describe('Primary programming language for language-specific best practices')
+      },
+      async (params) => {
+        const startTime = Date.now();
+        logger.info('Handling best_practices_review request', { 
+          codebasePath: params.codebasePath,
+          practicesFocus: params.practicesFocus,
+          language: params.language 
+        });
+        
+        try {
+          // Validate inputs
+          if (!params.codebasePath.trim()) {
+            throw new Error('VALIDATION_ERROR: codebasePath cannot be empty');
+          }
+
+          // Flatten the codebase for context
+          logger.debug('Flattening codebase for best practices review', { codebasePath: params.codebasePath });
+          const flattenedCode = await this.flattener.flattenCodebase(params.codebasePath);
+          if (!flattenedCode) {
+            throw new Error('CODEBASE_ERROR: Failed to flatten codebase - check if path exists and is accessible');
+          }
+
+          logger.debug('Sending best practices review request to Gemini', { 
+            practicesFocus: params.practicesFocus,
+            language: params.language 
+          });
+          const response = await this.gemini.bestPracticesReview({
+            codebaseContext: flattenedCode,
+            practicesFocus: params.practicesFocus,
+            language: params.language
+          });
+          
+          const duration = Date.now() - startTime;
+          logger.info('Successfully completed best_practices_review', { 
+            codebasePath: params.codebasePath,
+            durationMs: duration 
+          });
+
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(response, null, 2)
+            }]
+          };
+        } catch (error) {
+          const duration = Date.now() - startTime;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorCode = errorMessage.includes(':') ? errorMessage.split(':')[0] : 'UNKNOWN_ERROR';
+          
+          logger.error('Error in best_practices_review', {
+            codebasePath: params.codebasePath,
+            practicesFocus: params.practicesFocus,
+            language: params.language,
+            errorCode,
+            errorMessage,
+            durationMs: duration
+          });
+
+          // Throw structured error with more context
+          const structuredError = new Error(`BEST_PRACTICES_REVIEW_FAILED: ${errorMessage}`);
+          structuredError.name = errorCode;
+          throw structuredError;
+        }
+      }
+    );
   }
 
   async start(transport: StdioServerTransport) {
