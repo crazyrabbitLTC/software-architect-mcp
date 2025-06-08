@@ -4,7 +4,7 @@
  */
 
 import { logger } from '../utils/logger.js';
-import type { StoredTask } from '../types/index.js';
+import type { StoredTask as _StoredTask } from '../types/index.js';
 
 export class StorageManager {
   private basePath: string;

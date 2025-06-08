@@ -1,6 +1,6 @@
 # Task ID: 2
 # Title: Implement Core MCP Server
-# Status: pending
+# Status: done
 # Dependencies: 1
 # Priority: high
 # Description: Create the core MCP server implementation that handles protocol communication and exposes the required tools.
@@ -38,3 +38,47 @@
 
 # Test Strategy:
 Write unit tests for the MCP server initialization, tool registration, and basic request handling. Mock the tool handlers to verify correct parameter passing. Test error handling by simulating various error conditions.
+
+# Subtasks:
+## 2.1. Create test suite for MCPServer [completed]
+### Dependencies: None
+### Description: Implemented comprehensive test suite in tests/core/server.test.ts with 17 test cases covering all core functionality.
+### Details:
+
+
+## 2.2. Implement MCPServer class [completed]
+### Dependencies: None
+### Description: Created MCPServer class in src/core/server.ts with constructor, tool registration, request handling, and lifecycle management.
+### Details:
+
+
+## 2.3. Implement tool registration [completed]
+### Dependencies: None
+### Description: Implemented registerTools() method with proper JSON schemas for review_plan and review_implementation tools.
+### Details:
+
+
+## 2.4. Add request handling and validation [completed]
+### Dependencies: None
+### Description: Implemented request routing, parameter validation against schemas, and proper error handling.
+### Details:
+
+
+## 2.5. Implement configuration loading [completed]
+### Dependencies: None
+### Description: Added support for loading configuration from environment variables.
+### Details:
+
+
+## 2.6. Update main entry point [completed]
+### Dependencies: None
+### Description: Updated src/index.ts to use the new MCPServer class with proper transport connection and graceful shutdown.
+### Details:
+
+
+## 2.7. Refactor and enhance implementation [completed]
+### Dependencies: None
+### Description: Refactored logger mocking in tests to use Winston, added getServer() method, and enhanced error messages and validation.
+### Details:
+
+

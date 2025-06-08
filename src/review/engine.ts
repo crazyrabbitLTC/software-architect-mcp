@@ -4,7 +4,11 @@
  */
 
 import { logger } from '../utils/logger.js';
-import type { ReviewResponse, ReviewPlanParams, ReviewImplementationParams } from '../types/index.js';
+import type { 
+  ReviewResponse as _ReviewResponse, 
+  ReviewPlanParams as _ReviewPlanParams, 
+  ReviewImplementationParams as _ReviewImplementationParams 
+} from '../types/index.js';
 
 export class ReviewEngine {
   constructor() {

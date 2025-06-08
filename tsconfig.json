@@ -2,7 +2,6 @@
   "compilerOptions": {
     // Output
     "outDir": "./dist",
-    "rootDir": "./src",
     
     // Module settings
     "module": "ESNext",
@@ -32,13 +31,11 @@
     "isolatedModules": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "tests/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "tests",
-    "**/*.test.ts",
-    "**/*.spec.ts"
+    "dist"
   ]
 } 

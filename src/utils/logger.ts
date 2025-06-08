@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Create logs directory if it doesn't exist
-const logsDir = path.join(__dirname, '../../logs');
+const _logsDir = path.join(__dirname, '../../logs');
 
 const logLevel = process.env.LOG_LEVEL || 'info';
 

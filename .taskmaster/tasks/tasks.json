@@ -52,14 +52,57 @@
       "id": 2,
       "title": "Implement Core MCP Server",
       "description": "Create the core MCP server implementation that handles protocol communication and exposes the required tools.",
-      "details": "1. Implement MCP server class using the TypeScript SDK\n2. Register the two main tools:\n   ```typescript\n   // Define tool schemas\n   const reviewPlanSchema = {\n     // Define schema based on ReviewPlanParams interface\n   };\n   \n   const reviewImplementationSchema = {\n     // Define schema based on ReviewImplementationParams interface\n   };\n   \n   // Register tools\n   server.registerTool({\n     name: 'review_plan',\n     description: 'Reviews implementation plan before coding',\n     schema: reviewPlanSchema,\n     handler: reviewPlanHandler\n   });\n   \n   server.registerTool({\n     name: 'review_implementation',\n     description: 'Reviews completed implementation',\n     schema: reviewImplementationSchema,\n     handler: reviewImplementationHandler\n   });\n   ```\n3. Implement server startup and shutdown procedures\n4. Add error handling and logging\n5. Create configuration loading mechanism",
-      "testStrategy": "Write unit tests for the MCP server initialization, tool registration, and basic request handling. Mock the tool handlers to verify correct parameter passing. Test error handling by simulating various error conditions.",
-      "priority": "high",
+      "status": "done",
       "dependencies": [
         1
       ],
-      "status": "pending",
-      "subtasks": []
+      "priority": "high",
+      "details": "1. Implement MCP server class using the TypeScript SDK\n2. Register the two main tools:\n   ```typescript\n   // Define tool schemas\n   const reviewPlanSchema = {\n     // Define schema based on ReviewPlanParams interface\n   };\n   \n   const reviewImplementationSchema = {\n     // Define schema based on ReviewImplementationParams interface\n   };\n   \n   // Register tools\n   server.registerTool({\n     name: 'review_plan',\n     description: 'Reviews implementation plan before coding',\n     schema: reviewPlanSchema,\n     handler: reviewPlanHandler\n   });\n   \n   server.registerTool({\n     name: 'review_implementation',\n     description: 'Reviews completed implementation',\n     schema: reviewImplementationSchema,\n     handler: reviewImplementationHandler\n   });\n   ```\n3. Implement server startup and shutdown procedures\n4. Add error handling and logging\n5. Create configuration loading mechanism",
+      "testStrategy": "Write unit tests for the MCP server initialization, tool registration, and basic request handling. Mock the tool handlers to verify correct parameter passing. Test error handling by simulating various error conditions.",
+      "subtasks": [
+        {
+          "id": 2.1,
+          "title": "Create test suite for MCPServer",
+          "description": "Implemented comprehensive test suite in tests/core/server.test.ts with 17 test cases covering all core functionality.",
+          "status": "completed"
+        },
+        {
+          "id": 2.2,
+          "title": "Implement MCPServer class",
+          "description": "Created MCPServer class in src/core/server.ts with constructor, tool registration, request handling, and lifecycle management.",
+          "status": "completed"
+        },
+        {
+          "id": 2.3,
+          "title": "Implement tool registration",
+          "description": "Implemented registerTools() method with proper JSON schemas for review_plan and review_implementation tools.",
+          "status": "completed"
+        },
+        {
+          "id": 2.4,
+          "title": "Add request handling and validation",
+          "description": "Implemented request routing, parameter validation against schemas, and proper error handling.",
+          "status": "completed"
+        },
+        {
+          "id": 2.5,
+          "title": "Implement configuration loading",
+          "description": "Added support for loading configuration from environment variables.",
+          "status": "completed"
+        },
+        {
+          "id": 2.6,
+          "title": "Update main entry point",
+          "description": "Updated src/index.ts to use the new MCPServer class with proper transport connection and graceful shutdown.",
+          "status": "completed"
+        },
+        {
+          "id": 2.7,
+          "title": "Refactor and enhance implementation",
+          "description": "Refactored logger mocking in tests to use Winston, added getServer() method, and enhanced error messages and validation.",
+          "status": "completed"
+        }
+      ]
     },
     {
       "id": 3,
