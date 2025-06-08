@@ -56,15 +56,32 @@ export class MCPServer {
         codebasePath: z.string().describe('Path to the codebase to analyze')
       },
       async (params) => {
-        logger.info('Handling review_plan request', { taskId: params.taskId });
+        const startTime = Date.now();
+        logger.info('Handling review_plan request', { 
+          taskId: params.taskId,
+          codebasePath: params.codebasePath 
+        });
         
         try {
-          // Flatten the codebase for context
-          const flattenedCode = await this.flattener.flattenCodebase(params.codebasePath);
-          if (!flattenedCode) {
-            throw new Error('Failed to flatten codebase');
+          // Validate inputs
+          if (!params.taskId.trim()) {
+            throw new Error('VALIDATION_ERROR: taskId cannot be empty');
+          }
+          if (!params.taskDescription.trim()) {
+            throw new Error('VALIDATION_ERROR: taskDescription cannot be empty');
+          }
+          if (!params.implementationPlan.trim()) {
+            throw new Error('VALIDATION_ERROR: implementationPlan cannot be empty');
           }
 
+          // Flatten the codebase for context
+          logger.debug('Flattening codebase', { codebasePath: params.codebasePath });
+          const flattenedCode = await this.flattener.flattenCodebase(params.codebasePath);
+          if (!flattenedCode) {
+            throw new Error('CODEBASE_ERROR: Failed to flatten codebase - check if path exists and is accessible');
+          }
+
+          logger.debug('Sending request to Gemini', { taskId: params.taskId });
           const response = await this.gemini.reviewPlan({
             taskId: params.taskId,
             taskDescription: params.taskDescription,
@@ -73,6 +90,7 @@ export class MCPServer {
           });
 
           // Store the review in task context
+          logger.debug('Storing task context', { taskId: params.taskId });
           await this.storage.storeTaskContext(params.taskId, {
             taskId: params.taskId,
             taskDescription: params.taskDescription,
@@ -82,6 +100,12 @@ export class MCPServer {
             updatedAt: new Date().toISOString()
           });
           
+          const duration = Date.now() - startTime;
+          logger.info('Successfully completed review_plan', { 
+            taskId: params.taskId, 
+            durationMs: duration 
+          });
+
           return {
             content: [{
               type: 'text',
@@ -89,8 +113,22 @@ export class MCPServer {
             }]
           };
         } catch (error) {
-          logger.error('Error in review_plan', error);
-          throw error;
+          const duration = Date.now() - startTime;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorCode = errorMessage.includes(':') ? errorMessage.split(':')[0] : 'UNKNOWN_ERROR';
+          
+          logger.error('Error in review_plan', {
+            taskId: params.taskId,
+            errorCode,
+            errorMessage,
+            durationMs: duration,
+            codebasePath: params.codebasePath
+          });
+
+          // Throw structured error with more context
+          const structuredError = new Error(`REVIEW_PLAN_FAILED: ${errorMessage}`);
+          structuredError.name = errorCode;
+          throw structuredError;
         }
       }
     );
@@ -107,12 +145,33 @@ export class MCPServer {
         afterPath: z.string().describe('Path to codebase after changes')
       },
       async (params) => {
-        logger.info('Handling review_implementation request', { taskId: params.taskId });
+        const startTime = Date.now();
+        logger.info('Handling review_implementation request', { 
+          taskId: params.taskId,
+          beforePath: params.beforePath,
+          afterPath: params.afterPath
+        });
         
         try {
+          // Validate inputs
+          if (!params.taskId.trim()) {
+            throw new Error('VALIDATION_ERROR: taskId cannot be empty');
+          }
+          if (!params.taskDescription.trim()) {
+            throw new Error('VALIDATION_ERROR: taskDescription cannot be empty');
+          }
+          if (!params.originalPlan.trim()) {
+            throw new Error('VALIDATION_ERROR: originalPlan cannot be empty');
+          }
+          if (!params.implementationSummary.trim()) {
+            throw new Error('VALIDATION_ERROR: implementationSummary cannot be empty');
+          }
+
           // Get or create task context
+          logger.debug('Retrieving task context', { taskId: params.taskId });
           let taskContext = await this.storage.retrieveTaskContext(params.taskId);
           if (!taskContext) {
+            logger.debug('Creating new task context', { taskId: params.taskId });
             taskContext = {
               taskId: params.taskId,
               taskDescription: params.taskDescription,
@@ -124,12 +183,14 @@ export class MCPServer {
           }
 
           // Get diff between before and after states
+          logger.debug('Generating diff', { beforePath: params.beforePath, afterPath: params.afterPath });
           const diff = await this.flattener.getDiff(params.beforePath, params.afterPath);
           if (!diff) {
-            throw new Error('Failed to generate diff');
+            throw new Error('DIFF_ERROR: Failed to generate diff - check if both paths exist and are accessible');
           }
 
           // Review the implementation
+          logger.debug('Sending implementation review to Gemini', { taskId: params.taskId });
           const response = await this.gemini.reviewImplementation({
             taskId: params.taskId,
             taskDescription: params.taskDescription,
@@ -139,11 +200,18 @@ export class MCPServer {
           });
 
           // Update task context with implementation review
+          logger.debug('Updating task context', { taskId: params.taskId });
           taskContext.implementation = params.implementationSummary;
           taskContext.reviews.push(response);
           taskContext.updatedAt = new Date().toISOString();
           await this.storage.storeTaskContext(params.taskId, taskContext);
           
+          const duration = Date.now() - startTime;
+          logger.info('Successfully completed review_implementation', { 
+            taskId: params.taskId, 
+            durationMs: duration 
+          });
+
           return {
             content: [{
               type: 'text',
@@ -151,8 +219,23 @@ export class MCPServer {
             }]
           };
         } catch (error) {
-          logger.error('Error in review_implementation', error);
-          throw error;
+          const duration = Date.now() - startTime;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorCode = errorMessage.includes(':') ? errorMessage.split(':')[0] : 'UNKNOWN_ERROR';
+          
+          logger.error('Error in review_implementation', {
+            taskId: params.taskId,
+            errorCode,
+            errorMessage,
+            durationMs: duration,
+            beforePath: params.beforePath,
+            afterPath: params.afterPath
+          });
+
+          // Throw structured error with more context
+          const structuredError = new Error(`REVIEW_IMPLEMENTATION_FAILED: ${errorMessage}`);
+          structuredError.name = errorCode;
+          throw structuredError;
         }
       }
     );
@@ -165,20 +248,37 @@ export class MCPServer {
         reviewFocus: z.string().optional().describe('Specific area to focus the review on (e.g., security, performance, architecture)')
       },
       async (params) => {
-        logger.info('Handling code_review request', { codebasePath: params.codebasePath });
+        const startTime = Date.now();
+        logger.info('Handling code_review request', { 
+          codebasePath: params.codebasePath,
+          reviewFocus: params.reviewFocus 
+        });
         
         try {
-          // Flatten the codebase for context
-          const flattenedCode = await this.flattener.flattenCodebase(params.codebasePath);
-          if (!flattenedCode) {
-            throw new Error('Failed to flatten codebase');
+          // Validate inputs
+          if (!params.codebasePath.trim()) {
+            throw new Error('VALIDATION_ERROR: codebasePath cannot be empty');
           }
 
+          // Flatten the codebase for context
+          logger.debug('Flattening codebase for review', { codebasePath: params.codebasePath });
+          const flattenedCode = await this.flattener.flattenCodebase(params.codebasePath);
+          if (!flattenedCode) {
+            throw new Error('CODEBASE_ERROR: Failed to flatten codebase - check if path exists and is accessible');
+          }
+
+          logger.debug('Sending code review request to Gemini', { reviewFocus: params.reviewFocus });
           const response = await this.gemini.codeReview({
             codebaseContext: flattenedCode,
             reviewFocus: params.reviewFocus
           });
           
+          const duration = Date.now() - startTime;
+          logger.info('Successfully completed code_review', { 
+            codebasePath: params.codebasePath,
+            durationMs: duration 
+          });
+
           return {
             content: [{
               type: 'text',
@@ -186,8 +286,22 @@ export class MCPServer {
             }]
           };
         } catch (error) {
-          logger.error('Error in code_review', error);
-          throw error;
+          const duration = Date.now() - startTime;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorCode = errorMessage.includes(':') ? errorMessage.split(':')[0] : 'UNKNOWN_ERROR';
+          
+          logger.error('Error in code_review', {
+            codebasePath: params.codebasePath,
+            reviewFocus: params.reviewFocus,
+            errorCode,
+            errorMessage,
+            durationMs: duration
+          });
+
+          // Throw structured error with more context
+          const structuredError = new Error(`CODE_REVIEW_FAILED: ${errorMessage}`);
+          structuredError.name = errorCode;
+          throw structuredError;
         }
       }
     );

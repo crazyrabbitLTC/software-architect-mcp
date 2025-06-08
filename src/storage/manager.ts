@@ -116,13 +116,17 @@ export class StorageManager {
       throw new Error('Encryption key not available');
     }
     
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-cbc', this.encryptionKey, iv);
+    const iv = crypto.randomBytes(12); // GCM typically uses 12-byte IV
+    const cipher = crypto.createCipheriv('aes-256-gcm', this.encryptionKey, iv);
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     
-    return iv.toString('hex') + ':' + encrypted;
+    // Get the authentication tag
+    const authTag = cipher.getAuthTag();
+    
+    // Combine IV + authTag + encrypted data
+    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
   }
 
   private decrypt(encryptedText: string): string {
@@ -136,10 +140,17 @@ export class StorageManager {
       textToDecrypt = encryptedText.toString('utf8');
     }
     
-    const [ivHex, encrypted] = textToDecrypt.split(':');
-    const iv = Buffer.from(ivHex, 'hex');
+    const parts = textToDecrypt.split(':');
+    if (parts.length !== 3) {
+      throw new Error('Invalid encrypted data format');
+    }
     
-    const decipher = crypto.createDecipheriv('aes-256-cbc', this.encryptionKey, iv);
+    const [ivHex, authTagHex, encrypted] = parts;
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    
+    const decipher = crypto.createDecipheriv('aes-256-gcm', this.encryptionKey, iv);
+    decipher.setAuthTag(authTag);
     
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');

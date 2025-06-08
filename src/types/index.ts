@@ -2,12 +2,12 @@
  * TypeScript interfaces and types for the Software Architect MCP Server
  */
 
-// Tool parameter schemas
+// Tool parameter schemas - External API (what MCP tools receive)
 export interface ReviewPlanParams {
   taskId: string;
   taskDescription: string;
   implementationPlan: string;
-  codebaseContext: string;
+  codebasePath: string; // Path to codebase, not processed content
 }
 
 export interface ReviewImplementationParams {
@@ -15,7 +15,24 @@ export interface ReviewImplementationParams {
   taskDescription: string;
   originalPlan: string;
   implementationSummary: string;
-  codebaseSnapshot: string;
+  beforePath: string; // Path to codebase before changes
+  afterPath: string; // Path to codebase after changes
+}
+
+// Internal parameter schemas - what gets sent to Gemini
+export interface GeminiReviewPlanParams {
+  taskId: string;
+  taskDescription: string;
+  implementationPlan: string;
+  codebaseContext: string; // Processed/flattened content
+}
+
+export interface GeminiReviewImplementationParams {
+  taskId: string;
+  taskDescription: string;
+  originalPlan: string;
+  implementationSummary: string;
+  codebaseSnapshot: string; // Processed diff content
 }
 
 export interface CodeReviewParams {
@@ -93,6 +110,8 @@ export interface TaskContext {
   implementation?: string;
   preSnapshot?: string;
   postSnapshot?: string;
+  preReviewSnapshotId?: string;
+  postReviewSnapshotId?: string;
   reviews: ReviewResponse[];
   createdAt: string;
   updatedAt: string;

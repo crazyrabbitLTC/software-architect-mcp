@@ -5,7 +5,13 @@
 
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { logger } from '../utils/logger.js';
-import type { ReviewPlanParams, ReviewImplementationParams, CodeReviewParams, ReviewResponse, GeminiConfig } from '../types/index.js';
+import type { 
+  GeminiConfig, 
+  GeminiReviewPlanParams,
+  GeminiReviewImplementationParams,
+  CodeReviewParams,
+  ReviewResponse 
+} from '../types/index.js';
 
 export class GeminiClient {
   private client: GoogleGenerativeAI;
@@ -26,7 +32,7 @@ export class GeminiClient {
     logger.info('Gemini client initialized');
   }
 
-  async reviewPlan(params: ReviewPlanParams): Promise<ReviewResponse> {
+  async reviewPlan(params: GeminiReviewPlanParams): Promise<ReviewResponse> {
     logger.info(`Reviewing plan for task: ${params.taskId}`);
     
     const prompt = this.buildPlanReviewPrompt(params);
@@ -52,17 +58,17 @@ export class GeminiClient {
     }
   }
 
-  async reviewImplementation(params: ReviewImplementationParams): Promise<ReviewResponse> {
+  async reviewImplementation(params: GeminiReviewImplementationParams): Promise<ReviewResponse> {
     logger.info(`Reviewing implementation for task: ${params.taskId}`);
     
     const prompt = this.buildImplementationReviewPrompt(params);
     
     try {
-      // Use Flash model for implementation reviews (faster, pattern matching)
+      // Use Flash model for implementation reviews (faster, still capable)
       const result = await this.flashModel.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: 0.2,
+          temperature: 0.3,
           maxOutputTokens: 8192,
           responseMimeType: 'application/json'
         }
@@ -104,7 +110,7 @@ export class GeminiClient {
     }
   }
 
-  private buildPlanReviewPrompt(params: ReviewPlanParams): string {
+  private buildPlanReviewPrompt(params: GeminiReviewPlanParams): string {
     return `You are a senior software architect reviewing an implementation plan. Analyze the following plan and provide structured feedback.
 
 Task ID: ${params.taskId}
@@ -139,7 +145,7 @@ Consider:
 6. Best practices adherence`;
   }
 
-  private buildImplementationReviewPrompt(params: ReviewImplementationParams): string {
+  private buildImplementationReviewPrompt(params: GeminiReviewImplementationParams): string {
     return `You are a senior software architect reviewing a completed implementation. Compare the implementation against the original plan and provide structured feedback.
 
 Task ID: ${params.taskId}
